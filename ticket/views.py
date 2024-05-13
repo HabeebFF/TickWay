@@ -68,7 +68,7 @@ def history(request):
 
     return Response({'message': 'One Way Ticket Purchased'}, status=status.HTTP_200_OK)
 
-
+@api_view(['POST'])
 def get_ticket_price(request):
     from_loc = request.data.get('from_loc')
     to_loc = request.data.get('to_loc')
