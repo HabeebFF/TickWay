@@ -24,6 +24,6 @@ urlpatterns = [
     path('signup/', signup, name='signup'),
     path('login/', login, name='login'),
     path('history/', history, name='history'),
-    path('book_ticket/,', book_ticket, name='book_ticket'),
+    path('book_ticket/', book_ticket, name='book_ticket'),
     path('get_ticket_price/', get_ticket_price, name='get_ticket_price')
 ]

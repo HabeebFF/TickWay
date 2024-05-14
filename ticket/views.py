@@ -59,11 +59,12 @@ def book_ticket(request):
 
 
     if trip_type == 'one_way':
-        ticket = Ticket(user_id=user_id, trip_type=trip_type, from_loc=from_loc, to_loc=to_loc, transport_date=transport_date, number_of_tickets=number_of_tickets, price=price)
+        user = Users.objects.get(user_id=user_id)
+        ticket = Ticket(user_id=user, trip_type=trip_type, from_loc=from_loc, to_loc=to_loc, transport_date=transport_date, number_of_tickets=number_of_tickets, price=price)
 
         wallet = Wallet.objects.get(user_id=user_id)
         
-        wallet_balance = wallel.wallet_balance - price
+        wallet_balance = wallet.wallet_balance - price
         wallet.save()
         ticket.save()
 
