@@ -5,6 +5,8 @@ from rest_framework.response import Response
 from .models import Users, Ticket, Wallet
 from .serializers import UserSerializer
 from django.contrib.auth import authenticate
+from django.db import transaction
+
 
 @api_view(['POST'])
 def signup(request):
@@ -47,6 +49,8 @@ def login(request):
         return Response({'message': 'Invalid email or password'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
+
+
 @api_view(['POST'])
 def book_ticket(request):
     user_id = request.data.get('user_id')
@@ -57,29 +61,70 @@ def book_ticket(request):
     number_of_tickets = request.data.get('number_of_tickets')
     price = request.data.get('price')
 
+    if None in [user_id, trip_type, from_loc, to_loc, transport_date, number_of_tickets, price]:
+        return Response({'error': 'Missing required fields'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        user = Users.objects.get(user_id=user_id)
+    except Users.DoesNotExist:
+        return Response({'error': 'User does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
     if trip_type == 'one_way':
-        user = Users.objects.get(user_id=user_id)
-        ticket = Ticket(user_id=user, trip_type=trip_type, from_loc=from_loc, to_loc=to_loc, transport_date=transport_date, number_of_tickets=number_of_tickets, price=price)
+        with transaction.atomic():
+            try:
+                wallet = Wallet.objects.select_for_update().get(user_id=user_id)
+                if wallet.wallet_balance < price:
+                    return Response({'error': 'Insufficient funds'}, status=status.HTTP_400_BAD_REQUEST)
 
-        wallet = Wallet.objects.get(user_id=user_id)
-        
-        wallet_balance = wallet.wallet_balance - price
-        wallet.save()
-        ticket.save()
+                wallet.wallet_balance -= price
+                wallet.save()
 
-        return Response({'message': 'One Way Ticket Purchased'}, status=status.HTTP_200_OK)
+                ticket = Ticket.objects.create(
+                    user_id=user, 
+                    trip_type=trip_type, 
+                    from_loc=from_loc, 
+                    to_loc=to_loc, 
+                    transport_date=transport_date, 
+                    number_of_tickets=number_of_tickets, 
+                    price=price
+                )
+
+                return Response({'message': 'One Way Ticket Purchased'}, status=status.HTTP_200_OK)
+            except Wallet.DoesNotExist:
+                return Response({'error': 'Wallet does not exist'}, status=status.HTTP_404_NOT_FOUND)
     elif trip_type == 'round_trip':
         return_date = request.data.get('return_date')
+        if return_date is None:
+            return Response({'error': 'Return date is required for round trip'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        with transaction.atomic():
+            try:
+                price = price - (price * 0.15)
+                wallet = Wallet.objects.select_for_update().get(user_id=user_id)
+                if wallet.wallet_balance < price:
+                    return Response({'error': 'Insufficient funds'}, status=status.HTTP_400_BAD_REQUEST)
 
-        ticket = Ticket(user_id=user_id, trip_type=trip_type, from_loc=from_loc, to_loc=to_loc, transport_date=transport_date, return_date=return_date, number_of_tickets=number_of_tickets, price=price)
+                wallet.wallet_balance = float(wallet.wallet_balance) - price
+                wallet.save()
 
-        ticket.save()
+                ticket = Ticket.objects.create(
+                    user_id=user, 
+                    trip_type=trip_type, 
+                    from_loc=from_loc, 
+                    to_loc=to_loc, 
+                    transport_date=transport_date, 
+                    return_date=return_date, 
+                    number_of_tickets=number_of_tickets, 
+                    price=price
+                )
+        
 
-        return Response({'message': 'Round Trip Ticket Purchased'}, status=status.HTTP_200_OK)
-
+                return Response({'message': 'Round Trip Ticket Purchased'}, status=status.HTTP_200_OK)
+            except Wallet.DoesNotExist:
+                return Response({'error': 'Wallet does not exist'}, status=status.HTTP_404_NOT_FOUND)
     else:
-        return Response({'error': 'Ticket Purchase Failed'})
+        return Response({'error': 'Invalid trip type'}, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['POST'])
 def history(request):
