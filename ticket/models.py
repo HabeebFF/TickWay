@@ -28,6 +28,7 @@ class Ticket(models.Model):
     to_loc = models.CharField(max_length=40)
     booking_date = models.DateTimeField(default=datetime.datetime.now)
     transport_date = models.DateField()
+    return_date = models.DateField(default=None)
     number_of_tickets = models.IntegerField()
     price = models.DecimalField(decimal_places=2, max_digits=5)
 

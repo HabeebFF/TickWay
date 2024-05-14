@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import Users, Ticket
+from .models import Users, Ticket, Wallet
 from .serializers import UserSerializer
 from django.contrib.auth import authenticate
 
@@ -11,6 +11,17 @@ def signup(request):
     serializer = UserSerializer(data=request.data)
     if serializer.is_valid():
         user = serializer.save()
+        username = user.username
+        user_det = Users.objects.get(username=username)
+        user_id = user_det.user_id
+        print(user_id)
+        wallet = Wallet(user_id=user_det)
+        try:
+            wallet.save()
+            print("Wallet saved successfully")
+        except Exception as e:
+            print("Error saving wallet:", e)
+
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -48,16 +59,26 @@ def book_ticket(request):
 
 
     if trip_type == 'one_way':
-        new_ticket = Ticket(user_id=user_id, trip_type=trip_type, from_loc=from_loc, to_loc=to_loc, transport_date=transport_date, number_of_tickets=number_of_tickets, price=price)
+        ticket = Ticket(user_id=user_id, trip_type=trip_type, from_loc=from_loc, to_loc=to_loc, transport_date=transport_date, number_of_tickets=number_of_tickets, price=price)
+
+        wallet = Wallet.objects.get(user_id=user_id)
+        
+        wallet_balance = wallel.wallet_balance - price
+        wallet.save()
+        ticket.save()
 
         return Response({'message': 'One Way Ticket Purchased'}, status=status.HTTP_200_OK)
     elif trip_type == 'round_trip':
-        new_ticket = Ticket(user_id=user_id, trip_type=trip_type, from_loc=from_loc, to_loc=to_loc, transport_date=transport_date, number_of_tickets=number_of_tickets, price=price)
+        return_date = request.data.get('return_date')
+
+        ticket = Ticket(user_id=user_id, trip_type=trip_type, from_loc=from_loc, to_loc=to_loc, transport_date=transport_date, return_date=return_date, number_of_tickets=number_of_tickets, price=price)
+
+        ticket.save()
 
         return Response({'message': 'Round Trip Ticket Purchased'}, status=status.HTTP_200_OK)
 
     else:
-        return Response({'message': 'Ticket Purchase Failed'}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({'error': 'Ticket Purchase Failed'})
 
 @api_view(['POST'])
 def history(request):
@@ -98,7 +119,8 @@ def get_ticket_price(request):
 
     if (from_loc.lower(), to_loc.lower()) in prices:
         price = prices[(from_loc.lower(), to_loc.lower())]
-        return Response({'price': price})
+        print(price)
+        return Response({'price': price}, status=status.HTTP_200_OK)
     else:
         return Response({'error': 'Invalid locations'})
 
