@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Users, Ticket, Wallet
-from .serializers import UserSerializer
+from .serializers import UserSerializer, TicketSerializer
 from django.contrib.auth import authenticate
 from django.db import transaction
 
@@ -89,7 +89,17 @@ def book_ticket(request):
                     price=price
                 )
 
-                return Response({'message': 'One Way Ticket Purchased'}, status=status.HTTP_200_OK)
+                booked_ticket = {
+                    "user_id": user_id,
+                    "trip_type": trip_type,
+                    "from_loc": from_loc,
+                    "to_loc": to_loc,
+                    "transport_date": transport_date,
+                    "number_of_tickets": number_of_tickets,
+                    "price":price
+                }
+
+                return Response(booked_ticket, status=status.HTTP_200_OK)
             except Wallet.DoesNotExist:
                 return Response({'error': 'Wallet does not exist'}, status=status.HTTP_404_NOT_FOUND)
     elif trip_type == 'round_trip':
@@ -117,9 +127,18 @@ def book_ticket(request):
                     number_of_tickets=number_of_tickets, 
                     price=price
                 )
-        
 
-                return Response({'message': 'Round Trip Ticket Purchased'}, status=status.HTTP_200_OK)
+                booked_ticket = {
+                    "user_id": user_id,
+                    "trip_type": trip_type,
+                    "from_loc": from_loc,
+                    "to_loc": to_loc,
+                    "transport_date": transport_date,
+                    "return_date": return_date,
+                    "number_of_tickets": number_of_tickets,
+                    "price":price
+                }
+                return Response(booked_ticket, status=status.HTTP_200_OK)
             except Wallet.DoesNotExist:
                 return Response({'error': 'Wallet does not exist'}, status=status.HTTP_404_NOT_FOUND)
     else:
@@ -131,9 +150,9 @@ def history(request):
     user_id = request.data.get('user_id')
 
     user_tickets = Ticket.objects.filter(user_id=user_id)
-    print(user_tickets)
+    serializer = TicketSerializer(user_tickets, many=True)  # Serialize the queryset
 
-    return Response({'message': 'One Way Ticket Purchased'}, status=status.HTTP_200_OK)
+    return Response({'user_tickets': serializer.data}, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
 def get_ticket_price(request):
@@ -171,3 +190,8 @@ def get_ticket_price(request):
         return Response({'error': 'Invalid locations'})
 
     
+@api_view(['GET'])
+def get_all_users(request):
+    users = Users.objects.all()
+    serializer = UserSerializer(users, many=True)  # Serialize the queryset
+    return Response({'users': serializer.data}, status=status.HTTP_200_OK)
