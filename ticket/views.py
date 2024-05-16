@@ -76,7 +76,7 @@ def book_ticket(request):
                 if wallet.wallet_balance < price:
                     return Response({'error': 'Insufficient funds'}, status=status.HTTP_400_BAD_REQUEST)
 
-                wallet.wallet_balance -= price
+                wallet.wallet_balance = float(wallet.wallet_balance) - price
                 wallet.save()
 
                 ticket = Ticket.objects.create(
@@ -109,7 +109,6 @@ def book_ticket(request):
         
         with transaction.atomic():
             try:
-                price = price - (price * 0.15)
                 wallet = Wallet.objects.select_for_update().get(user_id=user_id)
                 if wallet.wallet_balance < price:
                     return Response({'error': 'Insufficient funds'}, status=status.HTTP_400_BAD_REQUEST)
@@ -158,6 +157,7 @@ def history(request):
 def get_ticket_price(request):
     from_loc = request.data.get('from_loc')
     to_loc = request.data.get('to_loc')
+    trip_type = request.data.get('trip_type')
 
     prices = {
         ("mushin", "costain"): 100,
@@ -184,8 +184,14 @@ def get_ticket_price(request):
 
     if (from_loc.lower(), to_loc.lower()) in prices:
         price = prices[(from_loc.lower(), to_loc.lower())]
-        print(price)
-        return Response({'price': price}, status=status.HTTP_200_OK)
+        # print(price)
+        if trip_type == "one_way":
+            return Response({'price': price}, status=status.HTTP_200_OK)
+        elif trip_type == "round_trip":
+            price = price * 2
+
+            price = price - (price * 0.15)
+            return Response({'price': price}, status=status.HTTP_200_OK)
     else:
         return Response({'error': 'Invalid locations'})
 
