@@ -24,7 +24,7 @@ def signup(request):
         username = user.username
         user_det = Users.objects.get(username=username)
         user_id = user_det.user_id
-        print(user_id)
+        # print(user_id)
         wallet = Wallet(user_id=user_det)
         try:
             wallet.save()
@@ -41,17 +41,20 @@ def login(request):
     email = request.data.get('email')
     password = request.data.get('password')
 
-    print(email)
-    print(password)
-
-
     user = Users.objects.filter(email=email, password=password)
 
-    print(user)
-
     if user:
+        user_info = {}
+        for info in user:
+            user_info["user_id"] = info.user_id
+            user_info["username"] = info.username
+            user_info["first_name"] = info.first_name
+            user_info["last_name"] = info.last_name
+            user_info["email"] = info.email
+            user_info["phone_number"] = info.phone_number
+
         # User is authenticated, return success response
-        return Response({'message': 'Login successful'}, status=status.HTTP_200_OK)
+        return Response({'message': 'Login successful', "user_info": user_info}, status=status.HTTP_200_OK)
     else:
         # Authentication failed, return error response
         return Response({'message': 'Invalid email or password'}, status=status.HTTP_401_UNAUTHORIZED)
@@ -160,6 +163,7 @@ def history(request):
     serializer = TicketSerializer(user_tickets, many=True)  # Serialize the queryset
 
     return Response({'user_tickets': serializer.data}, status=status.HTTP_200_OK)
+
 
 @api_view(['POST'])
 def get_ticket_price(request):
