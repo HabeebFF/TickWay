@@ -36,3 +36,19 @@ class Ticket(models.Model):
 class Location(models.Model):
     location_id = models.IntegerField(primary_key=True)
     loc_name = models.CharField(max_length=20)
+
+
+class Transaction(models.Model):
+    transaction_id = models.IntegerField(primary_key=True)
+    user_id = models.ForeignKey(Users, on_delete=models.CASCADE)
+    reference = models.CharField(max_length=100, unique=True)
+    transaction_type = models.CharField(max_length=6)
+    transaction_status = models.CharField(max_length=10)
+    access_code = models.CharField(max_length=100, unique=True)
+    email = models.EmailField()
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    
+    
