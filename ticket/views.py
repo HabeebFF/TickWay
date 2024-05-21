@@ -43,6 +43,9 @@ def login(request):
 
     user = Users.objects.filter(email=email, password=password)
 
+    user_wallet = Wallet.objects.filter(user_id=user)
+
+
     if user:
         user_info = {}
         for info in user:
@@ -52,6 +55,7 @@ def login(request):
             user_info["last_name"] = info.last_name
             user_info["email"] = info.email
             user_info["phone_number"] = info.phone_number
+            user_info["wallet_balance"] = user_wallet.wallet_balance
 
         # User is authenticated, return success response
         return Response({'message': 'Login successful', "user_info": user_info}, status=status.HTTP_200_OK)
