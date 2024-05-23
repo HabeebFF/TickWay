@@ -41,21 +41,22 @@ def login(request):
     email = request.data.get('email')
     password = request.data.get('password')
 
-    user = Users.objects.filter(email=email, password=password)
+    user = Users.objects.get(email=email, password=password)
 
-    user_wallet = Wallet.objects.filter(user_id=user)
+    user_wallet = Wallet.objects.get(user_id=user.user_id)
+    print(user_wallet)
 
 
     if user:
         user_info = {}
-        for info in user:
-            user_info["user_id"] = info.user_id
-            user_info["username"] = info.username
-            user_info["first_name"] = info.first_name
-            user_info["last_name"] = info.last_name
-            user_info["email"] = info.email
-            user_info["phone_number"] = info.phone_number
-            user_info["wallet_balance"] = user_wallet.wallet_balance
+    
+        user_info["user_id"] = user.user_id
+        user_info["username"] = user.username
+        user_info["first_name"] = user.first_name
+        user_info["last_name"] = user.last_name
+        user_info["email"] = user.email
+        user_info["phone_number"] = user.phone_number
+        user_info["wallet_balance"] = user_wallet.wallet_balance
 
         # User is authenticated, return success response
         return Response({'message': 'Login successful', "user_info": user_info}, status=status.HTTP_200_OK)
