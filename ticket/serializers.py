@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Users, Ticket
+from .models import Users, Ticket, Wallet
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -11,4 +11,9 @@ class UserSerializer(serializers.ModelSerializer):
 class TicketSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ticket
+        fields = '__all__'
+
+class WalletSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Wallet
         fields = '__all__'

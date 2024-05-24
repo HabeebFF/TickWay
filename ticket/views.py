@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Users, Ticket, Wallet, Transaction
-from .serializers import UserSerializer, TicketSerializer
+from .serializers import UserSerializer, TicketSerializer, WalletSerializer
 from django.contrib.auth import authenticate
 from django.db import transaction
 from django.views.decorators.csrf import csrf_exempt
@@ -226,7 +226,9 @@ def get_ticket_price(request):
 def get_all_users(request):
     users = Users.objects.all()
     serializer = UserSerializer(users, many=True)  # Serialize the queryset
-    return Response({'users': serializer.data}, status=status.HTTP_200_OK)
+    wallets = Wallet.objects.all()
+    wallet_serializer = WalletSerializer(wallets, many=True)
+    return Response({'users': serializer.data, 'wallet': wallet_serializer.data}, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
