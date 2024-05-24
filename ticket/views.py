@@ -170,6 +170,15 @@ def history(request):
     return Response({'user_tickets': serializer.data}, status=status.HTTP_200_OK)
 
 
+@api_view(['GET'])
+def get_all_tickets(request):
+    tickets = Ticket.object.all()
+    serializer = TicketSerializer(tickets, many=True)
+    
+    return Response({'user_tickets': serializer.data}, status=status.HTTP_200_OK)
+
+
+
 @api_view(['POST'])
 def get_ticket_price(request):
     from_loc = request.data.get('from_loc')
@@ -220,40 +229,91 @@ def get_all_users(request):
     return Response({'users': serializer.data}, status=status.HTTP_200_OK)
 
 
+@api_view(['GET'])
+def verify_payment(request):
+    reference = request.data.get('reference')
+    amount = request.data.get('amount')
 
-@csrf_exempt
-def paystack_webhook(request):
-    event = json.loads(request.body)
+    if not reference:
+        return Response({'error': 'Reference is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-    if event['event'] == 'charge.success':
-        data = event['data']
-        reference = data['reference']
-        amount = data['amount'] / 100  # Convert back to main currency unit
+    url = f"https://api.paystack.co/transaction/verify/{reference}"
 
-        try:
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer sk_test_c70a285be29337a0697e19864e3665adb79cfc37'
+    }
+
+    response = requests.get(url, headers=headers)
+    
+    if response.status_code == 200:
+        response_data = response.json()
+        print(response_data)
+        if response_data['status'] and response_data['data']['amount'] == int(amount):
+            try:
             # Retrieve the transaction record
-            transaction = Transaction.objects.get(reference=reference)
+                transaction = Transaction.objects.get(reference=reference)
             
             # Update the transaction status to successful
-            transaction.transaction_status = 'success'
-            transaction.save()
+                transaction.transaction_status = 'success'
+                transaction.save()
 
             # Update the user's wallet balance
-            user = transaction.user_id
-            wallet = Wallet.objects.select_for_update().get(user_id=user)
-            wallet.wallet_balance += amount
-            wallet.save()
-            print("Wallet updated successfully")
-        except Transaction.DoesNotExist:
-            print("Transaction not found")
-        except Users.DoesNotExist:
-            print("User not found")
-        except Wallet.DoesNotExist:
-            print("Wallet not found")
-        except Exception as e:
-            print("Error updating wallet:", e)
+                user = transaction.user_id
+                wallet = Wallet.objects.select_for_update().get(user_id=user)
+                wallet.wallet_balance += amount
+                wallet.save()
+                print("Wallet updated successfully")
+            except Transaction.DoesNotExist:
+                print("Transaction not found")
+            except Users.DoesNotExist:
+                print("User not found")
+            except Wallet.DoesNotExist:
+                print("Wallet not found")
+            except Exception as e:
+                print("Error updating wallet:", e)
+            return Response({'message': 'Payment verified successfully.'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Payment verification failed.'}, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        return Response({'error': 'Failed to verify payment.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    return Response(status=status.HTTP_200_OK)
+
+    
+
+# @csrf_exempt
+# def paystack_webhook(request):
+#     event = json.loads(request.body)
+
+#     if event['event'] == 'charge.success':
+#         data = event['data']
+#         reference = data['reference']
+#         amount = data['amount'] / 100  # Convert back to main currency unit
+
+#         try:
+#             # Retrieve the transaction record
+#             transaction = Transaction.objects.get(reference=reference)
+            
+#             # Update the transaction status to successful
+#             transaction.transaction_status = 'success'
+#             transaction.save()
+
+#             # Update the user's wallet balance
+#             user = transaction.user_id
+#             wallet = Wallet.objects.select_for_update().get(user_id=user)
+#             wallet.wallet_balance += amount
+#             wallet.save()
+#             print("Wallet updated successfully")
+#         except Transaction.DoesNotExist:
+#             print("Transaction not found")
+#         except Users.DoesNotExist:
+#             print("User not found")
+#         except Wallet.DoesNotExist:
+#             print("Wallet not found")
+#         except Exception as e:
+#             print("Error updating wallet:", e)
+
+#     return Response(status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
@@ -299,12 +359,88 @@ def top_up_wallet(request):
             user_id=user,
             reference=reference,
             transaction_type='topup',
-            transaction_status='initialized',
+            transaction_status='pending',
             access_code=access_code,
             email=email,
             amount=amount,
         )
 
-        return Response({"authorization_url": authorization_url, "access_code": access_code}, status=status.HTTP_200_OK)
+        return Response({"authorization_url": authorization_url, "access_code": access_code, "reference": reference, "amount": amount}, status=status.HTTP_200_OK)
     else:
         return Response(response_data, status=response.status_code)
+
+
+
+@api_view(['POST'])
+def change_username(request):
+    new_username = request.data.get("new_username")
+    user_id = request.data.get("user_id")
+
+    if not new_username or not user_id:
+        return Response({'message': 'new_username and user_id are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        with transaction.atomic():
+            if Users.objects.filter(username=new_username).exists():
+                return Response({'message': 'Username has been taken'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            user = Users.objects.select_for_update().get(user_id=user_id)
+            user.username = new_username
+            user.save()
+            
+            return Response({'message': 'Username updated successfully'}, status=status.HTTP_200_OK)
+    
+    except Users.DoesNotExist:
+        return Response({'message': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+def change_email(request):
+    new_email = request.data.get("new_email")
+    user_id = request.data.get("user_id")
+
+    if not new_email or not user_id:
+        return Response({'message': 'new_email and user_id are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        with transaction.atomic():
+            if Users.objects.filter(email=new_email).exists():
+                return Response({'message': 'Email has been taken'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            user = Users.objects.select_for_update().get(user_id=user_id)
+            user.email = new_email
+            user.save()
+            
+            return Response({'message': 'Email updated successfully'}, status=status.HTTP_200_OK)
+    
+    except Users.DoesNotExist:
+        return Response({'message': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+def change_phone_number(request):
+    new_phone_number = request.data.get("new_phone_number")
+    user_id = request.data.get("user_id")
+
+    if not new_phone_number or not user_id:
+        return Response({'message': 'new_phone_number and user_id are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        with transaction.atomic():
+            if Users.objects.filter(phone_number=new_phone_number).exists():
+                return Response({'message': 'Phone number has been taken'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            user = Users.objects.select_for_update().get(user_id=user_id)
+            user.phone_number = new_phone_number
+            user.save()
+            
+            return Response({'message': 'Phone Number updated successfully'}, status=status.HTTP_200_OK)
+    
+    except Users.DoesNotExist:
+        return Response({'message': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
