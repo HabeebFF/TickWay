@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from ticket.views import signup, login, history, book_ticket, get_ticket_price, get_all_users, top_up_wallet, verify_payment, change_username, change_email
+from ticket.views import signup, login, history, book_ticket, get_ticket_price, get_all_users, top_up_wallet, verify_payment, change_username, change_email, change_phone_number
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -30,5 +30,6 @@ urlpatterns = [
     path('top_up_wallet/', top_up_wallet, name='top_up_wallet'),
     path('verify_payment/', verify_payment, name='verify_payment'),
     path('change_username/', change_username, name='change_username'),
-    path('change_email/', change_email, name='change_email')
+    path('change_email/', change_email, name='change_email'),
+    path('change_phone_number', change_phone_number, name='change_phone_number')
 ]
