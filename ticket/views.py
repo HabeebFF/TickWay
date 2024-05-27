@@ -3,17 +3,28 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Users, Ticket, Wallet, Transaction
-from .serializers import UserSerializer, TicketSerializer, WalletSerializer
+from .serializers import UserSerializer, TicketSerializer, WalletSerializer, GetUserSerializer
 from django.contrib.auth import authenticate
 from django.db import transaction
 from django.views.decorators.csrf import csrf_exempt
 import paystack
 import requests
 import json
-
+import random
+import string
 
 paystack_secret_key = 'sk_test_c70a285be29337a0697e19864e3665adb79cfc37'
 paystack.api_key = paystack_secret_key
+
+
+
+def generate_random_string(length=10):
+    characters = string.ascii_lowercase + string.digits
+    return ''.join(random.choice(characters) for _ in range(length))
+
+# random_string = generate_random_string()
+
+
 
 
 @api_view(['POST'])
@@ -225,7 +236,7 @@ def get_ticket_price(request):
 @api_view(['GET'])
 def get_all_users(request):
     users = Users.objects.all()
-    serializer = UserSerializer(users, many=True)  # Serialize the queryset
+    serializer = GetUserSerializer(users, many=True)  # Serialize the queryset
     wallets = Wallet.objects.all()
     wallet_serializer = WalletSerializer(wallets, many=True)
     return Response({'users': serializer.data, 'wallet': wallet_serializer.data}, status=status.HTTP_200_OK)
@@ -446,3 +457,80 @@ def change_phone_number(request):
         return Response({'message': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+def debit_user(request):
+    user_id = request.data.get('user_id')
+    amount = request.data.get('amount')
+
+    user = Users.objects.get(user_id=user_id)
+
+    if not user_id or not amount:
+        return Response({'error': 'user_id and amount are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        with transaction.atomic():
+            sender_balance = Wallet.objects.select_for_update().get(user_id=user_id)
+            if sender_balance.wallet_balance < amount:
+                return Response({'error': 'Insufficient balance'}, status=status.HTTP_400_BAD_REQUEST)
+
+            sender_balance.wallet_balance -= amount
+            sender_balance.save()
+
+            sender = Users.objects.get(user_id=user_id)
+            sender_email = sender.email
+
+            reference = generate_random_string()
+            access_code = generate_random_string(5)
+
+            Transaction.objects.create(
+                user_id=user,
+                reference=reference,
+                transaction_type='transfer',
+                transaction_status='pending',
+                access_code=access_code,
+                email=sender_email,
+                amount=amount,
+            )
+
+            return Response({'reference': reference, 'amount': amount}, status=status.HTTP_200_OK)
+    except Wallet.DoesNotExist:
+        return Response({'error': 'Sender wallet not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Users.DoesNotExist:
+        return Response({'error': 'Sender user not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+@api_view(['POST']) 
+def credit_user(request):
+    receiver_username = request.data.get('receiver_username')
+    reference = request.data.get('reference')
+    amount = request.data.get('amount')
+
+    if not receiver_username or not reference or not amount:
+        return Response({'error': 'receiver_username, reference, and amount are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        
+            transaction = Transaction.objects.select_for_update().get(reference=reference, amount=amount, transaction_status='pending')
+            
+            receiver = Users.objects.get(username=receiver_username)
+            receiver_balance = Wallet.objects.select_for_update().get(user_id=receiver.user_id)
+            receiver_balance.wallet_balance += amount
+            receiver_balance.save()
+
+            transaction.transaction_status = 'success'
+            transaction.save()
+
+            return Response({'message': 'Transfer Successful'}, status=status.HTTP_200_OK)
+    except Transaction.DoesNotExist:
+        return Response({'error': 'Transaction not found or invalid amount'}, status=status.HTTP_404_NOT_FOUND)
+    except Users.DoesNotExist:
+        return Response({'error': 'Receiver user not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Wallet.DoesNotExist:
+        return Response({'error': 'Receiver wallet not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
