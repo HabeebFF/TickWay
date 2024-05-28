@@ -85,10 +85,9 @@ def book_ticket(request):
     from_loc = request.data.get('from_loc')
     to_loc = request.data.get('to_loc')
     transport_date = request.data.get('transport_date')
-    number_of_tickets = request.data.get('number_of_tickets')
     price = request.data.get('price')
 
-    if None in [user_id, trip_type, from_loc, to_loc, transport_date, number_of_tickets, price]:
+    if None in [user_id, trip_type, from_loc, to_loc, transport_date, price]:
         return Response({'error': 'Missing required fields'}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
@@ -112,7 +111,6 @@ def book_ticket(request):
                     from_loc=from_loc, 
                     to_loc=to_loc, 
                     transport_date=transport_date, 
-                    number_of_tickets=number_of_tickets, 
                     price=price
                 )
 
@@ -122,7 +120,6 @@ def book_ticket(request):
                     "from_loc": from_loc,
                     "to_loc": to_loc,
                     "transport_date": transport_date,
-                    "number_of_tickets": number_of_tickets,
                     "price":price
                 }
 
@@ -130,10 +127,6 @@ def book_ticket(request):
             except Wallet.DoesNotExist:
                 return Response({'error': 'Wallet does not exist'}, status=status.HTTP_404_NOT_FOUND)
     elif trip_type == 'round_trip':
-        return_date = request.data.get('return_date')
-        if return_date is None:
-            return Response({'error': 'Return date is required for round trip'}, status=status.HTTP_400_BAD_REQUEST)
-        
         with transaction.atomic():
             try:
                 wallet = Wallet.objects.select_for_update().get(user_id=user_id)
@@ -148,9 +141,7 @@ def book_ticket(request):
                     trip_type=trip_type, 
                     from_loc=from_loc, 
                     to_loc=to_loc, 
-                    transport_date=transport_date, 
-                    return_date=return_date, 
-                    number_of_tickets=number_of_tickets, 
+                    transport_date=transport_date,  
                     price=price
                 )
 
@@ -160,8 +151,6 @@ def book_ticket(request):
                     "from_loc": from_loc,
                     "to_loc": to_loc,
                     "transport_date": transport_date,
-                    "return_date": return_date,
-                    "number_of_tickets": number_of_tickets,
                     "price":price
                 }
                 return Response(booked_ticket, status=status.HTTP_200_OK)
