@@ -25,7 +25,8 @@ def generate_random_string(length=10):
 # random_string = generate_random_string()
 
 
-
+def index(request):
+    return render(request, 'index.html');
 
 @api_view(['POST'])
 def signup(request):

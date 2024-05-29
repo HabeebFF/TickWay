@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+  <head>
+    <!-- Metadata section: character encoding, viewport settings, title -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Preconnect to Google Fonts for better performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Link to Google Fonts stylesheet -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Link to Font Awesome stylesheet -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <!-- Link to Material Symbols stylesheet -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,300,0,0"
+    />
+    <!-- Link to the custom admin CSS file -->
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}" />
+    <!-- Page title -->
+    <title>Healtha - Dashboard</title>
+  </head>
+  <body>
+    <!-- Main container for the body content -->
+    <div class="main-body">
+      <!-- Navigation section -->
+      <div class="dash-nav">
+        <!-- Logo section -->
+        <div class="top-logo">
+          <span class="material-symbols-rounded"> radar </span>
+          <h2>Radar.</h2>
+        </div>
+        <!-- Navigation buttons section -->
+        <div class="nav-btns">
+          <ul>
+            <li>
+              <button class="active li-btn" data-target="dashboard-screen">
+                <span class="material-symbols-rounded"> dashboard </span>
+                <p>Dashboard</p>
+              </button>
+            </li>
+            <li>
+              <button class="li-btn" data-target="account-screen">
+                <span class="material-symbols-rounded"> account_box </span>
+                <p>Accounts</p>
+              </button>
+            </li>
+            <li>
+              <button class="li-btn" data-target="ticket-screen">
+                <span class="material-symbols-rounded">
+                  confirmation_number
+                </span>
+                <p>Tickets</p>
+              </button>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <!-- Main dashboard screen -->
+      <div class="dash-screen">
+        <div class="dash-top-screen">
+          <h2 class="screen-title">Dashboard</h2>
+          <div class="top-screen-right">
+            <div class="btn-cont-rf">
+              <p id="rf-state"></p>
+              <button class="refresh-button" id="rf-btn">
+                <i class="fa-solid fa-arrows-rotate"></i>
+              </button>
+            </div>
+            <button class="logout">
+              <span class="material-symbols-rounded"> logout </span>
+            </button>
+          </div>
+        </div>
+        <div class="dash-screen-main">
+          <div class="main-contained">
+            <!-- Dashboard overview section -->
+            <div
+              class="dashboard-screen active off dashboard"
+              id="dashboard-screen"
+            >
+              <div class="overview-box-cont">
+                <div class="overview-box">
+                  <h3>Accounts</h3>
+                  <p id="count-icons">
+                    <span class="material-symbols-rounded"> account_box </span>
+                  </p>
+                  <p id="number-avail">
+                      <span>Total: </span>
+                      <span class="bus-count">10</span>
+                  </p>
+                </div>
+                <div class="overview-box">
+                  <h3>Tickets</h3>
+                  <p id="count-icons">
+                    <span class="material-symbols-rounded">
+                      confirmation_number
+                    </span>
+                  </p>
+                  <p id="number-avail">
+                    <span>Total: </span>
+                    <span class="bus-count">10</span>
+                </p>
+                </div>
+                <div class="overview-box">
+                  <h3>Buses</h3>
+                    <p id="count-icons">
+                      <span class="material-symbols-rounded">
+                        directions_bus
+                      </span>
+                    </p>
+                    <p id="number-avail">
+                      <span>Total: </span>
+                      <span class="bus-count">10</span>
+                  </p>
+                </div>
+                <!-- <div class="overview-box">
+                  <h3>Transactions</h3>
+                </div> -->
+              </div>
+              <!-- <div class="overview-tables">
+                            Map container
+                            <div id='myMap'></div>
+                        </div> -->
+              <div class="map">
+                <h2>Map Container</h2>
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d63427.14407162616!2d3.345646075740742!3d6.496788217402196!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x103b8cf3ea9e2d33%3A0xdc48a40ac59ed2a5!2sLagos%20Mainland%2C%20Lagos%20101245%2C%20Lagos!5e0!3m2!1sen!2sng!4v1716548460535!5m2!1sen!2sng&zoom=14"
+                  height="400"
+                  loading="lazy"
+                  style="border:0;"
+                  referrerpolicy="no-referrer-when-downgrade"
+                ></iframe>
+              </div>
+            </div>
+            <!-- Accounts section -->
+            <div class="account-screen off registers" id="account-screen">
+              <div class="screen-top-contained">
+                <div class="stc-left">
+                  <div class="btn-cont-rf">
+                    <div class="btn-actions">
+                      <!-- <button class="active-action-btn" type="button" id="activeActionBtn" aria-expanded="false" data-target="account-modal">
+                                            <span class="material-symbols-rounded">add</span>
+                                            <p>Add</p>
+                                        </button> -->
+                    </div>
+                  </div>
+                </div>
+                <div class="dropdown">
+                  <div class="pagination-section-aab">
+                    <label for="paginationSwitch">Enable Pagination:</label>
+                    <input
+                      type="checkbox"
+                      id="paginationSwitch"
+                      data-page="account-screen"
+                      checked
+                    />
+                  </div>
+                </div>
+              </div>
+              <!-- Search filter section -->
+              <div class="search-filter">
+                <div class="search-contained-area">
+                  <div class="row" id="search">
+                    <form
+                      id="search-form"
+                      action=""
+                      enctype="multipart/form-data"
+                    >
+                      <input
+                        class="form-control"
+                        type="text"
+                        placeholder="Search"
+                      />
+                      <button type="submit" class="btn btn-block btn-primary">
+                        Search
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+              <!-- Accounts table section -->
+              <div class="table-structure">
+                <table id="accountTable">
+                  <thead>
+                    <tr>
+                      <th>Username</th>
+                      <th>Full Name</th>
+                      <!-- <th>Last Name</th> -->
+                      <th>Email</th>
+                      <th>Phone No.</th>
+                      <th>Balance</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- Register data will be inserted here -->
+                  </tbody>
+                </table>
+                <!-- Pagination controls -->
+                <div id="pagination">
+                  <button id="prevBtn">
+                    <i class="fa-solid fa-circle-chevron-left"></i>
+                  </button>
+                  <span id="pageInfo"
+                    >Page <span id="currentPage">1</span> of
+                    <span id="totalPages">1</span></span
+                  >
+                  <button id="nextBtn">
+                    <i class="fa-solid fa-circle-chevron-right"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <!-- Patients section -->
+            <div class="ticket-screen off patients" id="ticket-screen">
+              <div class="screen-top-contained">
+                <div class="stc-left">
+                  <h1 class="screen-table-name">All Patients</h1>
+                </div>
+                <div class="dropdown">
+                  <div class="pagination-section-aab">
+                    <label for="paginationSwitch">Enable Pagination:</label>
+                    <input
+                      type="checkbox"
+                      id="paginationSwitch"
+                      data-page="ticket-screen"
+                      checked
+                    />
+                  </div>
+                  <div class="btn-actions">
+                    <button
+                      class="active-action-btn"
+                      type="button"
+                      id="activeActionBtn"
+                      aria-expanded="false"
+                      data-target="patientForm"
+                    >
+                      <i class="fas fa-plus"></i>
+                      <!-- Default icon (add) -->
+                      Add
+                    </button>
+                    <button
+                      class="dropdown-toggle"
+                      type="button"
+                      id="dropdownMenuButton"
+                      data-toggle="dropdown"
+                      aria-haspopup="true"
+                      aria-expanded="false"
+                    >
+                      <i class="fa-solid fa-caret-down"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <!-- Search filter section -->
+              <div class="search-filter">
+                <div class="search-contained-area">
+                  <div class="row" id="search">
+                    <form
+                      id="search-form"
+                      action=""
+                      enctype="multipart/form-data"
+                    >
+                      <input
+                        class="form-control"
+                        type="text"
+                        placeholder="Search"
+                      />
+                      <button type="submit" class="btn btn-block btn-primary">
+                        Search
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+              <!-- Patients table section -->
+              <div class="table-structure">
+                <table id="patientTable">
+                  <thead>
+                    <tr>
+                      <th>Reg. Id</th>
+                      <th>Name</th>
+                      <th>Age</th>
+                      <th>Gender</th>
+                      <th>Department</th>
+                      <th>Phone No.</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- Patient data will be inserted here -->
+                  </tbody>
+                </table>
+                <!-- Pagination controls -->
+                <div id="pagination">
+                  <button id="prevBtn">
+                    <i class="fa-solid fa-circle-chevron-left"></i>
+                  </button>
+                  <span id="pageInfo"
+                    >Page <span id="currentPage">1</span> of
+                    <span id="totalPages">1</span></span
+                  >
+                  <button id="nextBtn">
+                    <i class="fa-solid fa-circle-chevron-right"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <!-- Payments section -->
+            <div class="payment-screen off payments" id="payment-screen">
+              <div class="screen-top-contained">
+                <div class="stc-left">
+                  <h1 class="screen-table-name">All Payments</h1>
+                </div>
+                <div class="dropdown">
+                  <div class="pagination-section-aab">
+                    <label for="paginationSwitch">Enable Pagination:</label>
+                    <input
+                      type="checkbox"
+                      id="paginationSwitch"
+                      data-page="payment-screen"
+                      checked
+                    />
+                  </div>
+                  <div class="btn-actions">
+                    <button
+                      class="active-action-btn"
+                      type="button"
+                      id="activeActionBtn"
+                      aria-expanded="false"
+                      data-target="patientForm"
+                    >
+                      <i class="fas fa-plus"></i>
+                      <!-- Default icon (add) -->
+                      Add
+                    </button>
+                    <button
+                      class="dropdown-toggle"
+                      type="button"
+                      id="dropdownMenuButton"
+                      data-toggle="dropdown"
+                      aria-haspopup="true"
+                      aria-expanded="false"
+                    >
+                      <i class="fa-solid fa-caret-down"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <!-- Search filter section -->
+              <div class="search-filter">
+                <div class="search-contained-area">
+                  <div class="row" id="search">
+                    <form
+                      id="search-form"
+                      action=""
+                      enctype="multipart/form-data"
+                    >
+                      <input
+                        class="form-control"
+                        type="text"
+                        placeholder="Search"
+                      />
+                      <button type="submit" class="btn btn-block btn-primary">
+                        Search
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+              <!-- Payments table section -->
+              <div class="table-structure">
+                <table id="paymentTable">
+                  <thead>
+                    <tr>
+                      <th>Transaction ID</th>
+                      <th>Patient ID</th>
+                      <th>Amount</th>
+                      <th>Date</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- Payment data will be inserted here -->
+                  </tbody>
+                </table>
+                <!-- Pagination controls -->
+                <div id="pagination">
+                  <button id="prevBtn">
+                    <i class="fa-solid fa-circle-chevron-left"></i>
+                  </button>
+                  <span id="pageInfo"
+                    >Page <span id="currentPage">1</span> of
+                    <span id="totalPages">1</span></span
+                  >
+                  <button id="nextBtn">
+                    <i class="fa-solid fa-circle-chevron-right"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <!-- Default screen message -->
+            <!-- <p>Display the selected screen here</p> -->
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Import external JS libraries -->
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js"
+      integrity="sha512-oH/G1ib8DME67U2N5L57u4eyM7fDP78vw2D4sqS8B9SA7U4A/0sGYaGncB4Jo/JjvRJgzjtMFLHCS0wUD8jdiQ=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.3.4/axios.min.js"
+      integrity="sha512-fuop+HlSMTE7OnkmkJ5A8z3RmZEKPXkD+Hp1LgSaQk5KYukMLrNPkt7+gDyy4hb2f6CUX0TiBqiIINmtoPSm6A=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY"></script>
+    <!-- Link to the custom admin JS file -->
+    <script src="{% static 'js/nav.js' %}"></script>
+    <script src="{% static 'js/accounts.js' %}"></script>
+  </body>
+</html>
