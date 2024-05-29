@@ -76,7 +76,26 @@ def login(request):
         return Response({'message': 'Invalid email or password'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
+@api_view(['POST'])
+def get_user_info(request):
+    user_id = request.data.get('user_id')
 
+    try:
+        user = Users.objects.get(user_id=user_id)
+    except Users.DoesNotExist:
+        return Response({'error': 'User does not exist'}, status=status.HTTP_404_NOT_FOUND)
+
+    user_info = {}
+    
+    user_info["user_id"] = user.user_id
+    user_info["username"] = user.username
+    user_info["first_name"] = user.first_name
+    user_info["last_name"] = user.last_name
+    user_info["email"] = user.email
+    user_info["phone_number"] = user.phone_number
+    user_info["wallet_balance"] = user_wallet.wallet_balance
+
+    return Response({'user': user_info}, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
 def book_ticket(request):
