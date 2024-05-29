@@ -12,6 +12,7 @@ import requests
 import json
 import random
 import string
+import datetime
 
 paystack_secret_key = 'sk_test_c70a285be29337a0697e19864e3665adb79cfc37'
 paystack.api_key = paystack_secret_key
@@ -98,6 +99,18 @@ def get_user_info(request):
 
     return Response({'user': user_info}, status=status.HTTP_200_OK)
 
+
+def convert_date_format(date_str):
+    try:
+        # Parse the input string to a datetime object
+        input_date = datetime.datetime.strptime(date_str, "%d-%m-%Y")
+        # Format the datetime object to the desired output string
+        output_date = input_date.strftime("%Y-%m-%d")
+        return output_date
+    except ValueError:
+        return "Invalid date format. Please use dd-mm-yyyy."
+
+
 @api_view(['POST'])
 def book_ticket(request):
     user_id = request.data.get('user_id')
@@ -130,7 +143,7 @@ def book_ticket(request):
                     trip_type=trip_type, 
                     from_loc=from_loc, 
                     to_loc=to_loc, 
-                    transport_date=transport_date, 
+                    transport_date=convert_date_format(transport_date),
                     price=price
                 )
 
@@ -161,7 +174,7 @@ def book_ticket(request):
                     trip_type=trip_type, 
                     from_loc=from_loc, 
                     to_loc=to_loc, 
-                    transport_date=transport_date,  
+                    transport_date=convert_date_format(transport_date),
                     price=price
                 )
 
