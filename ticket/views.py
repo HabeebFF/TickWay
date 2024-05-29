@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.conf import settings
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -7,12 +8,17 @@ from .serializers import UserSerializer, TicketSerializer, WalletSerializer, Get
 from django.contrib.auth import authenticate
 from django.db import transaction
 from django.views.decorators.csrf import csrf_exempt
+from django.core.mail import send_mail
+from django.utils.crypto import get_random_string
 import paystack
 import requests
 import json
 import random
 import string
 import datetime
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 paystack_secret_key = 'sk_test_c70a285be29337a0697e19864e3665adb79cfc37'
 paystack.api_key = paystack_secret_key
@@ -27,17 +33,48 @@ def generate_random_string(length=10):
 
 
 def index(request):
-    return render(request, 'index.html');
+    return render(request, 'index.html')
+
+# @api_view(['POST'])
+# def signup(request):
+#     serializer = UserSerializer(data=request.data)
+#     if serializer.is_valid():
+#         user = serializer.save()
+#         username = user.username
+#         user_det = Users.objects.get(username=username)
+#         user_id = user_det.user_id
+#         # print(user_id)
+#         wallet = Wallet(user_id=user_det)
+#         try:
+#             wallet.save()
+#             print("Wallet saved successfully")
+#         except Exception as e:
+#             print("Error saving wallet:", e)
+#         send_mail(
+#             'Verify your email',
+#             f'Click the following link to verify your email:',
+#             settings.EMAIL_HOST_USER,
+#             [user.email],
+#             fail_silently=False,
+#         )
+#         return Response(serializer.data, status=status.HTTP_201_CREATED)
+#     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['POST'])
 def signup(request):
     serializer = UserSerializer(data=request.data)
     if serializer.is_valid():
         user = serializer.save()
-        username = user.username
-        user_det = Users.objects.get(username=username)
-        user_id = user_det.user_id
-        # print(user_id)
+
+        # Generate and save verification token
+        token = get_random_string(length=6)
+        user.verification_token = token
+        user.save()
+
+
+        # Create wallet for the user
+        user_det = Users.objects.get(username=user.username)
         wallet = Wallet(user_id=user_det)
         try:
             wallet.save()
@@ -45,8 +82,49 @@ def signup(request):
         except Exception as e:
             print("Error saving wallet:", e)
 
+        # Send verification email
+        verification_url = f'https://habeeb1234.pythonanywhere.com/verify/'
+
+        sender_email = 'habeebmuftau05@gmail.com'
+        receiver_email = user.email
+        password = 'jvbe whjo lnwe pwxu'
+        subject = 'Verify Email'
+        message = f'Hi Pelumi, Verify your email at {verification_url}'
+
+        msg = MIMEMultipart()
+        msg['From'] = sender_email
+        msg['To'] = receiver_email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(message, 'plain'))
+
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(sender_email, password)
+
+        server.sendmail(sender_email, receiver_email, msg.as_string())
+
+        server.quit()
+
+        # send_mail(
+        #     'Verify your email',
+        #     f'Click the following link to verify your email: {verification_url}',
+        #     settings.EMAIL_HOST_USER,
+        #     [user.email],
+        #     fail_silently=False,
+        # )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+def verify_email(request):
+    # token = request.data.get('token')
+
+
+    return render(request, 'verify_mail.html')
+
+
+
 
 
 @api_view(['POST'])
@@ -89,12 +167,12 @@ def get_user_info(request):
 
     user_info = {}
     
-    user_info["user_id"] = user.user_id
-    user_info["username"] = user.username
-    user_info["first_name"] = user.first_name
-    user_info["last_name"] = user.last_name
-    user_info["email"] = user.email
-    user_info["phone_number"] = user.phone_number
+    # user_info["user_id"] = user.user_id
+    # user_info["username"] = user.username
+    # user_info["first_name"] = user.first_name
+    # user_info["last_name"] = user.last_name
+    # user_info["email"] = user.email
+    # user_info["phone_number"] = user.phone_number
     user_info["wallet_balance"] = user_wallet.wallet_balance
 
     return Response({'user': user_info}, status=status.HTTP_200_OK)

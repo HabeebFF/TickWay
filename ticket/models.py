@@ -12,6 +12,8 @@ class Users(AbstractUser):
     last_name = models.CharField(max_length=30)
     phone_number = models.CharField(max_length=11)
     password = models.CharField(max_length=120, null=False)
+    verification_token = models.CharField(max_length=6)
+    is_verified = models.BooleanField(default=False)
 
 
 class Wallet(models.Model):
@@ -29,6 +31,7 @@ class Ticket(models.Model):
     booking_date = models.DateTimeField(default=datetime.datetime.now)
     transport_date = models.DateField()
     price = models.DecimalField(decimal_places=2, max_digits=5)
+
 
 
 class Location(models.Model):
