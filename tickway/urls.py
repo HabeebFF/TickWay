@@ -39,5 +39,6 @@ urlpatterns = [
     path('dashboard/', index, name='index'),
     path('verify_email/', verify_email, name='verify_email'),
     path('verified/', verified, name='verified' ),
-    path('not_verified', not_verified, name='not_verified')
+    path('not_verified/', not_verified, name='not_verified'),
+    path('get_all_transactions/', get_all_transactions, name='get_all_transactions')
 ]
