@@ -37,4 +37,7 @@ urlpatterns = [
     path('get_user_info/', get_user_info, name='get_user_info'),
     path('get_all_tickets/', get_all_tickets, name='get_all_tickets'),
     path('dashboard/', index, name='index'),
+    path('verify_email/', verify_email, name='verify_email'),
+    path('verified/', verified, name='verified' ),
+    path('not_verified', not_verified, name='not_verified')
 ]

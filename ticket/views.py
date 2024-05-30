@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.conf import settings
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -7,12 +8,17 @@ from .serializers import UserSerializer, TicketSerializer, WalletSerializer, Get
 from django.contrib.auth import authenticate
 from django.db import transaction
 from django.views.decorators.csrf import csrf_exempt
+from django.core.mail import send_mail
+from django.utils.crypto import get_random_string
 import paystack
 import requests
 import json
 import random
 import string
-import datetime
+from datetime import datetime
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 paystack_secret_key = 'sk_test_c70a285be29337a0697e19864e3665adb79cfc37'
 paystack.api_key = paystack_secret_key
@@ -27,17 +33,48 @@ def generate_random_string(length=10):
 
 
 def index(request):
-    return render(request, 'index.html');
+    return render(request, 'index.html')
+
+# @api_view(['POST'])
+# def signup(request):
+#     serializer = UserSerializer(data=request.data)
+#     if serializer.is_valid():
+#         user = serializer.save()
+#         username = user.username
+#         user_det = Users.objects.get(username=username)
+#         user_id = user_det.user_id
+#         # print(user_id)
+#         wallet = Wallet(user_id=user_det)
+#         try:
+#             wallet.save()
+#             print("Wallet saved successfully")
+#         except Exception as e:
+#             print("Error saving wallet:", e)
+#         send_mail(
+#             'Verify your email',
+#             f'Click the following link to verify your email:',
+#             settings.EMAIL_HOST_USER,
+#             [user.email],
+#             fail_silently=False,
+#         )
+#         return Response(serializer.data, status=status.HTTP_201_CREATED)
+#     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['POST'])
 def signup(request):
     serializer = UserSerializer(data=request.data)
     if serializer.is_valid():
         user = serializer.save()
-        username = user.username
-        user_det = Users.objects.get(username=username)
-        user_id = user_det.user_id
-        # print(user_id)
+
+        # Generate and save verification token
+        token = get_random_string(length=6)
+        user.verification_token = token
+        user.save()
+
+
+        # Create wallet for the user
+        user_det = Users.objects.get(username=user.username)
         wallet = Wallet(user_id=user_det)
         try:
             wallet.save()
@@ -45,38 +82,100 @@ def signup(request):
         except Exception as e:
             print("Error saving wallet:", e)
 
+        # Send verification email
+        verification_url = f'https://habeeb1234.pythonanywhere.com/verify_email/'
+
+        sender_email = 'habeebmuftau05@gmail.com'
+        receiver_email = user.email
+        password = 'jvbe whjo lnwe pwxu'
+        subject = 'Verify Email'
+        message = f'Hi Pelumi, Verify your email at {verification_url}'
+
+        msg = MIMEMultipart()
+        msg['From'] = sender_email
+        msg['To'] = receiver_email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(message, 'plain'))
+
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(sender_email, password)
+
+        server.sendmail(sender_email, receiver_email, msg.as_string())
+
+        server.quit()
+
+        # send_mail(
+        #     'Verify your email',
+        #     f'Click the following link to verify your email: {verification_url}',
+        #     settings.EMAIL_HOST_USER,
+        #     [user.email],
+        #     fail_silently=False,
+        # )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+def verify_email(request):
+    if request.method == "POST":
+        email = request.POST['email']
+        token = request.POST['token']
+        try: 
+            user = Users.objects.get(email=email)
+            user_token = user.verification_token
+            if user_token == token:
+                update_user = Users.objects.select_for_update().get(email=email)
+                update_user.is_verified = "True"
+                update_user.save()
+                
+                return render(request, 'v_s.html')
+            else:
+                return render(request, 'v_f.html')
+        except Users.DoesNotExist:
+            return render(request, 'v_f.html')
+
+    return render(request, 'verify_mail.html')
+
+
+def verified(request):
+    return render(request, 'v_s.html')
+
+
+def not_verified(request):
+    return render(request, 'v_s.html')
 
 @api_view(['POST'])
 def login(request):
     email = request.data.get('email')
     password = request.data.get('password')
 
-    user = Users.objects.get(email=email, password=password)
+    try:
+        user = Users.objects.get(email=email, password=password)
+        user_wallet = Wallet.objects.get(user_id=user.user_id)
 
-    user_wallet = Wallet.objects.get(user_id=user.user_id)
-    print(user_wallet)
+        if user:
+            if user.is_verified:
+                user_info = {}
 
+                user_info["user_id"] = user.user_id
+                user_info["username"] = user.username
+                user_info["first_name"] = user.first_name
+                user_info["last_name"] = user.last_name
+                user_info["email"] = user.email
+                user_info["phone_number"] = user.phone_number
+                user_info["wallet_balance"] = user_wallet.wallet_balance
 
-    if user:
-        user_info = {}
+                # User is authenticated, return success response
+                return Response({'message': 'Login successful', "user_info": user_info}, status=status.HTTP_200_OK)
+            else:
+                # Email not Verified, return error response
+                return Response({'message': 'User Email not verified'}, status=status.HTTP_401_UNAUTHORIZED)
+        else:
+            # Authentication failed, return error response
+            return Response({'message': 'Invalid email or password'}, status=status.HTTP_401_UNAUTHORIZED)
     
-        user_info["user_id"] = user.user_id
-        user_info["username"] = user.username
-        user_info["first_name"] = user.first_name
-        user_info["last_name"] = user.last_name
-        user_info["email"] = user.email
-        user_info["phone_number"] = user.phone_number
-        user_info["wallet_balance"] = user_wallet.wallet_balance
-
-        # User is authenticated, return success response
-        return Response({'message': 'Login successful', "user_info": user_info}, status=status.HTTP_200_OK)
-    else:
-        # Authentication failed, return error response
-        return Response({'message': 'Invalid email or password'}, status=status.HTTP_401_UNAUTHORIZED)
-
+    except Users.DoesNotExist:
+        return Response({'error': 'Email or Password incorrect'}, status=status.HTTP_404_NOT_FOUND)
 
 @api_view(['POST'])
 def get_user_info(request):
@@ -84,26 +183,42 @@ def get_user_info(request):
 
     try:
         user = Users.objects.get(user_id=user_id)
+        user_wallet = Wallet.objects.get(user_id=user.user_id)
+
     except Users.DoesNotExist:
         return Response({'error': 'User does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
-    user_info = {}
-    
-    user_info["user_id"] = user.user_id
-    user_info["username"] = user.username
-    user_info["first_name"] = user.first_name
-    user_info["last_name"] = user.last_name
-    user_info["email"] = user.email
-    user_info["phone_number"] = user.phone_number
-    user_info["wallet_balance"] = user_wallet.wallet_balance
+    except Wallet.DoesNotExist:
+        return Response({'error': 'Wallet does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
-    return Response({'user': user_info}, status=status.HTTP_200_OK)
+    # user_info = {}
 
+    # user_info["user_id"] = user.user_id
+    # user_info["username"] = user.username
+    # user_info["first_name"] = user.first_name
+    # user_info["last_name"] = user.last_name
+    # user_info["email"] = user.email
+    # user_info["phone_number"] = user.phone_number
+    # user_info["wallet_balance"] = user_wallet.wallet_balance
+
+    return Response({'wallet_balance': user_wallet.wallet_balance}, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def get_user_info_with_username(request):
+    username = request.data.get('username')
+
+    try:
+        user = Users.objects.get(username=username)
+        if user:
+            return Response({'username': username}, status=status.HTTP_200_OK)
+    except Users.DoesNotExist:
+        return Response({'error': 'User does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
 def convert_date_format(date_str):
     try:
         # Parse the input string to a datetime object
-        input_date = datetime.datetime.strptime(date_str, "%d-%m-%Y")
+        input_date = datetime.strptime(date_str, "%d-%m-%Y")
         # Format the datetime object to the desired output string
         output_date = input_date.strftime("%Y-%m-%d")
         return output_date
@@ -138,25 +253,25 @@ def book_ticket(request):
                 wallet.wallet_balance = float(wallet.wallet_balance) - price
                 wallet.save()
 
-                ticket = Ticket.objects.create(
-                    user_id=user, 
-                    trip_type=trip_type, 
-                    from_loc=from_loc, 
-                    to_loc=to_loc, 
+                Ticket.objects.create(
+                    user_id=user,
+                    trip_type=trip_type,
+                    from_loc=from_loc,
+                    to_loc=to_loc,
                     transport_date=convert_date_format(transport_date),
                     price=price
                 )
 
-                booked_ticket = {
-                    "user_id": user_id,
-                    "trip_type": trip_type,
-                    "from_loc": from_loc,
-                    "to_loc": to_loc,
-                    "transport_date": transport_date,
-                    "price":price
-                }
+                # booked_ticket = {
+                #     "user_id": user_id,
+                #     "trip_type": trip_type,
+                #     "from_loc": from_loc,
+                #     "to_loc": to_loc,
+                #     "transport_date": transport_date,
+                #     "price":price
+                # }
 
-                return Response(booked_ticket, status=status.HTTP_200_OK)
+                return Response({"message": "Booking Successful"}, status=status.HTTP_200_OK)
             except Wallet.DoesNotExist:
                 return Response({'error': 'Wallet does not exist'}, status=status.HTTP_404_NOT_FOUND)
     elif trip_type == 'round_trip':
@@ -169,24 +284,24 @@ def book_ticket(request):
                 wallet.wallet_balance = float(wallet.wallet_balance) - price
                 wallet.save()
 
-                ticket = Ticket.objects.create(
-                    user_id=user, 
-                    trip_type=trip_type, 
-                    from_loc=from_loc, 
-                    to_loc=to_loc, 
+                Ticket.objects.create(
+                    user_id=user,
+                    trip_type=trip_type,
+                    from_loc=from_loc,
+                    to_loc=to_loc,
                     transport_date=convert_date_format(transport_date),
                     price=price
                 )
 
-                booked_ticket = {
-                    "user_id": user_id,
-                    "trip_type": trip_type,
-                    "from_loc": from_loc,
-                    "to_loc": to_loc,
-                    "transport_date": transport_date,
-                    "price":price
-                }
-                return Response(booked_ticket, status=status.HTTP_200_OK)
+                # booked_ticket = {
+                #     "user_id": user_id,
+                #     "trip_type": trip_type,
+                #     "from_loc": from_loc,
+                #     "to_loc": to_loc,
+                #     "transport_date": transport_date,
+                #     "price":price
+                # }
+                return Response({"message": "Booking Successful"}, status=status.HTTP_200_OK)
             except Wallet.DoesNotExist:
                 return Response({'error': 'Wallet does not exist'}, status=status.HTTP_404_NOT_FOUND)
     else:
@@ -207,7 +322,7 @@ def history(request):
 def get_all_tickets(request):
     tickets = Ticket.objects.all()
     serializer = TicketSerializer(tickets, many=True)
-    
+
     return Response({'user_tickets': serializer.data}, status=status.HTTP_200_OK)
 
 
@@ -254,7 +369,7 @@ def get_ticket_price(request):
     else:
         return Response({'error': 'Invalid locations'})
 
-    
+
 @api_view(['GET'])
 def get_all_users(request):
     users = Users.objects.all()
@@ -280,15 +395,19 @@ def verify_payment(request):
     }
 
     response = requests.get(url, headers=headers)
-    
+
     if response.status_code == 200:
         response_data = response.json()
         print(response_data)
         if response_data['status'] and response_data['data']['amount'] == int(amount):
             try:
             # Retrieve the transaction record
+
                 transaction = Transaction.objects.get(reference=reference)
-            
+
+
+                transaction = Transaction.objects.get(reference=reference)
+
             # Update the transaction status to successful
                 transaction.transaction_status = 'success'
                 transaction.save()
@@ -314,7 +433,7 @@ def verify_payment(request):
         return Response({'error': 'Failed to verify payment.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-    
+
 
 # @csrf_exempt
 # def paystack_webhook(request):
@@ -328,7 +447,7 @@ def verify_payment(request):
 #         try:
 #             # Retrieve the transaction record
 #             transaction = Transaction.objects.get(reference=reference)
-            
+
 #             # Update the transaction status to successful
 #             transaction.transaction_status = 'success'
 #             transaction.save()
@@ -418,13 +537,13 @@ def change_username(request):
         with transaction.atomic():
             if Users.objects.filter(username=new_username).exists():
                 return Response({'message': 'Username has been taken'}, status=status.HTTP_400_BAD_REQUEST)
-            
+
             user = Users.objects.select_for_update().get(user_id=user_id)
             user.username = new_username
             user.save()
-            
+
             return Response({'message': 'Username updated successfully'}, status=status.HTTP_200_OK)
-    
+
     except Users.DoesNotExist:
         return Response({'message': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
@@ -443,13 +562,13 @@ def change_email(request):
         with transaction.atomic():
             if Users.objects.filter(email=new_email).exists():
                 return Response({'message': 'Email has been taken'}, status=status.HTTP_400_BAD_REQUEST)
-            
+
             user = Users.objects.select_for_update().get(user_id=user_id)
             user.email = new_email
             user.save()
-            
+
             return Response({'message': 'Email updated successfully'}, status=status.HTTP_200_OK)
-    
+
     except Users.DoesNotExist:
         return Response({'message': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
@@ -468,13 +587,13 @@ def change_phone_number(request):
         with transaction.atomic():
             if Users.objects.filter(phone_number=new_phone_number).exists():
                 return Response({'message': 'Phone number has been taken'}, status=status.HTTP_400_BAD_REQUEST)
-            
+
             user = Users.objects.select_for_update().get(user_id=user_id)
             user.phone_number = new_phone_number
             user.save()
-            
+
             return Response({'message': 'Phone Number updated successfully'}, status=status.HTTP_200_OK)
-    
+
     except Users.DoesNotExist:
         return Response({'message': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
@@ -526,7 +645,7 @@ def debit_user(request):
 
 
 
-@api_view(['POST']) 
+@api_view(['POST'])
 def credit_user(request):
     receiver_username = request.data.get('receiver_username')
     reference = request.data.get('reference')
@@ -536,9 +655,9 @@ def credit_user(request):
         return Response({'error': 'receiver_username, reference, and amount are required'}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        
+
             transaction = Transaction.objects.select_for_update().get(reference=reference, amount=amount, transaction_status='pending')
-            
+
             receiver = Users.objects.get(username=receiver_username)
             receiver_balance = Wallet.objects.select_for_update().get(user_id=receiver.user_id)
             receiver_balance.wallet_balance += amount

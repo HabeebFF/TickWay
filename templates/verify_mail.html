@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Verify Email</title>
+  </head>
+  <body>
+    <h1>Verify Your Email</h1>
+    <p>
+      Please enter your email and the 6-digit token that was sent to your email:
+    </p>
+    <form method="post" action="{% url 'verify_email' %}">
+      {% csrf_token %}
+      <label for="token">Email:</label><br />
+      <input type="email" id="email" name="email" required /><br />
+      <label for="token">Token:</label><br />
+      <input type="text" id="token" name="token" required /><br />
+      <input type="submit" value="Verify" />
+    </form>
+  </body>
+</html>
