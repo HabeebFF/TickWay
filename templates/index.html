@@ -728,14 +728,7 @@ tbody tr:hover {
                     <span class="bus-count">10</span>
                   </p>
                 </div>
-                <!-- <div class="overview-box">
-                  <h3>Transactions</h3>
-                </div> -->
               </div>
-              <!-- <div class="overview-tables">
-                            Map container
-                            <div id='myMap'></div>
-                        </div> -->
               <div class="map">
                 <h2>Map Container</h2>
                 <iframe
@@ -750,17 +743,13 @@ tbody tr:hover {
             <!-- Accounts section -->
             <div class="account-screen off registers" id="account-screen">
               <div class="screen-top-contained">
-                <div class="stc-left">
+                <!-- <div class="stc-left">
                   <div class="btn-cont-rf">
                     <div class="btn-actions">
-                      <!-- <button class="active-action-btn" type="button" id="activeActionBtn" aria-expanded="false" data-target="account-modal">
-                                            <span class="material-symbols-rounded">add</span>
-                                            <p>Add</p>
-                                        </button> -->
                     </div>
                   </div>
-                </div>
-                <div class="dropdown">
+                </div> -->
+                <!-- <div class="dropdown">
                   <div class="pagination-section-aab">
                     <label for="paginationSwitch">Enable Pagination:</label>
                     <input
@@ -770,7 +759,7 @@ tbody tr:hover {
                       checked
                     />
                   </div>
-                </div>
+                </div> -->
               </div>
               <!-- Search filter section -->
               <div class="search-filter">
@@ -830,7 +819,7 @@ tbody tr:hover {
             <!-- Patients section -->
             <div class="ticket-screen off patients" id="ticket-screen">
               <div class="screen-top-contained">
-                <div class="stc-left">
+                <!-- <div class="stc-left">
                   <h1 class="screen-table-name">All Patients</h1>
                 </div>
                 <div class="dropdown">
@@ -852,7 +841,7 @@ tbody tr:hover {
                       data-target="patientForm"
                     >
                       <i class="fas fa-plus"></i>
-                      <!-- Default icon (add) -->
+                       Default icon (add)
                       Add
                     </button>
                     <button
@@ -866,9 +855,10 @@ tbody tr:hover {
                       <i class="fa-solid fa-caret-down"></i>
                     </button>
                   </div>
-                </div>
+                </div> -->
               </div>
               <!-- Search filter section -->
+
               <div class="search-filter">
                 <div class="search-contained-area">
                   <div class="row" id="search">
@@ -889,22 +879,31 @@ tbody tr:hover {
                   </div>
                 </div>
               </div>
-              <!-- Patients table section -->
+              <!-- Tickets table section -->
               <div class="table-structure">
-                <table id="patientTable">
+                <!-- 
+                  ticket_id = models.AutoField(primary_key=True)
+                  user_id = models.ForeignKey(Users, on_delete=models.CASCADE)
+                  trip_type = models.CharField(max_length=10)
+                  from_loc = models.CharField(max_length=40)
+                  to_loc = models.CharField(max_length=40)
+                  booking_date = models.DateTimeField(default=datetime.datetime.now)
+                  transport_date = models.DateField()
+                  price = models.DecimalField(decimal_places=2, max_digits=5)
+                -->
+                <table id="ticketTable">
                   <thead>
                     <tr>
-                      <th>Reg. Id</th>
-                      <th>Name</th>
-                      <th>Age</th>
-                      <th>Gender</th>
-                      <th>Department</th>
-                      <th>Phone No.</th>
-                      <th>Date</th>
+                      <th>User</th>
+                      <th>Trip Type</th>
+                      <th>Locations</th>
+                      <th>Booked Date</th>
+                      <th>Transport Date</th>
+                      <th>Price</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <!-- Patient data will be inserted here -->
+                    <!-- Register data will be inserted here -->
                   </tbody>
                 </table>
                 <!-- Pagination controls -->
@@ -927,40 +926,6 @@ tbody tr:hover {
               <div class="screen-top-contained">
                 <div class="stc-left">
                   <h1 class="screen-table-name">All Payments</h1>
-                </div>
-                <div class="dropdown">
-                  <div class="pagination-section-aab">
-                    <label for="paginationSwitch">Enable Pagination:</label>
-                    <input
-                      type="checkbox"
-                      id="paginationSwitch"
-                      data-page="payment-screen"
-                      checked
-                    />
-                  </div>
-                  <div class="btn-actions">
-                    <button
-                      class="active-action-btn"
-                      type="button"
-                      id="activeActionBtn"
-                      aria-expanded="false"
-                      data-target="patientForm"
-                    >
-                      <i class="fas fa-plus"></i>
-                      <!-- Default icon (add) -->
-                      Add
-                    </button>
-                    <button
-                      class="dropdown-toggle"
-                      type="button"
-                      id="dropdownMenuButton"
-                      data-toggle="dropdown"
-                      aria-haspopup="true"
-                      aria-expanded="false"
-                    >
-                      <i class="fa-solid fa-caret-down"></i>
-                    </button>
-                  </div>
                 </div>
               </div>
               <!-- Search filter section -->
@@ -1095,39 +1060,91 @@ function storeActiveSection(sectionId) {
     <script>
       // Define arrays for tables
 let users = [];
-let dbUsers = [];
+var dbUsers = [];
+var dbTickets = [];
 
 // Define variables for pagination
 const itemsPerPage = 10;
 let currentPage = 1;
 let totalUsers = 0;
+let totalTickets = 0;
 let totalPages = 1;
 
-// Function to populate the account table with users based on pagination
-const populateAccountTable = (users, page) => {
-  const tbody = document.querySelector("#accountTable tbody");
-  tbody.innerHTML = ""; // Clear existing rows
+// Get the pages
+const accTable =  document.getElementById("accountTable");
+const ticketTable = document.getElementById("ticketTable");
+
+
+
+// Function to populate all table depending on args passed
+const populateTable = async (array, page, table) => {
+  console.log(table)
+  const tBody = table.querySelector("tbody");
+  tBody.innerHTML = ""; // Clear existing rows
 
   const startIndex = (page - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const displayedUsers = users.slice(startIndex, endIndex);
+  const displayedObjs = array.slice(startIndex, endIndex);
 
-  displayedUsers.forEach((user) => {
-    const row = document.createElement("tr");
 
-    row.innerHTML = `
-      <td>${user.username}</td>
-      <td>${user.first_name} ${user.last_name}</td>
-      <td>${user.email}</td>
-      <td>${user.phone_number}</td>
-      <td>${user.balance}</td>
-      <td class="status">${user.is_active ? "active" : "inactive"}</td>
-      <td><button class="ban-btn" data-id="${user.email}">${user.is_active ? 'Ban' : 'Unban'}</button></td>
-    `;
+  // Check the table passed and populate the table-specific fields
+  if (table === accTable) {
+    console.log("Populating Account Table!");
 
-    tbody.appendChild(row);
-  });
+    displayedObjs.forEach((obj) => {
+      const row = document.createElement("tr");
+
+      row.innerHTML = `
+        <td>${obj.username}</td>
+        <td>${obj.first_name} ${obj.last_name}</td>
+        <td>${obj.email}</td>
+        <td>${obj.phone_number}</td>
+        <td>${obj.balance}</td>
+        <td class="status">${obj.is_active ? "active" : "inactive"}</td>
+        <td><button class="ban-btn" data-id="${obj.email}">${obj.is_active ? 'Ban' : 'Unban'}</button></td>
+      `;
+
+      tBody.appendChild(row);
+      console.log(tBody);
+    });
+  } else if (table === ticketTable) {
+    console.log("Populating Tickets Table!");
+
+    displayedObjs.forEach((obj) => {
+      const row = document.createElement("tr");
+ 
+      row.innerHTML = `
+        <td>${obj.user}</td>
+        <td>${obj.trip_type}</td>
+        <td>${obj.from_loc} - ${obj.to_loc}</td>
+        <td>${formatDate(obj.booking_date)}</td>
+        <td>${formatDate(obj.transport_date)}</td>
+        <td class="status">${obj.price}</td>
+      `;
+
+      tBody.appendChild(row);
+      console.log(tBody);
+    });
+  } else {
+    console.log("No table passed!");
+  }
 };
+
+// Function to format invalid date types
+// The booking_date from ticket seem to return more than just the date, so we use this function to format
+function formatDate(dateString) {
+    const date = new Date(dateString);
+
+    // Options for formatting the date
+    const options = {
+        year: 'numeric',
+        month: 'long', // 'long' for full name, 'short' for abbreviated, 'narrow' for minimal
+        day: 'numeric',
+    };
+
+    return date.toLocaleDateString('en-US', options);
+}
+
 
 // Function to update pagination info
 const updatePaginationInfo = () => {
@@ -1144,7 +1161,7 @@ const navigatePagination = (direction) => {
   }
 
   // Repopulate the account table with users for the updated page
-  populateAccountTable(dbUsers, currentPage);
+  populateTable(dbUsers, currentPage, accTable);
   updatePaginationInfo();
 };
 
@@ -1167,7 +1184,7 @@ const filterUsers = (searchInput) => {
   currentPage = 1;
   totalUsers = filteredUsers.length;
   totalPages = Math.ceil(totalUsers / itemsPerPage);
-  populateAccountTable(filteredUsers, currentPage);
+  populateTable(filteredUsers, currentPage, accTable);
   updatePaginationInfo();
 };
 
@@ -1179,10 +1196,24 @@ document.getElementById("search-form").addEventListener("submit", (event) => {
 });
 
 // Event listener for search input changes
-document.getElementById("search-form").addEventListener("input", (event) => {
-  const searchInput = event.target.value;
-  filterUsers(searchInput);
-});
+const searchBar = document.querySelectorAll('#search-form');
+searchBar.forEach((element) => {
+  element.addEventListener("input", (event) => {
+    console.log("Searching!!!")
+
+    if (element.closest('#account-screen') == true) {
+      console.log(element.closest('#account-screen'))
+      const searchInput = event.target.value;
+      filterUsers(searchInput);
+    
+    } else if (element.closest('#ticket-screen') == true){
+      console.log(element.closest('#account-screen'))
+    } else {
+      console.log(element)
+    }
+  });  
+})
+
 
 // Function to handle refresh button click
 const handleRefresh = () => {
@@ -1199,7 +1230,7 @@ const handleRefresh = () => {
     }, 2000);
 
     // Repopulate the account table with users for the current page
-    populateAccountTable(dbUsers, currentPage);
+    populateTable(dbUsers, currentPage, accTable);
   });
 };
 
@@ -1267,7 +1298,21 @@ const fetchTickets = async () => {
       method: 'GET'
     });
     const result = await response.json();
-    const tickets = result.tickets;
+    const tickets = result.user_tickets;
+    console.log(tickets)
+
+    // Merge ticket with owner
+    dbTickets = tickets.map(ticket => {
+      const user = dbUsers.find(user => user.user_id === ticket.user_id);
+      return {
+        ...ticket,
+        user: user.username
+      }
+    });
+    console.log(dbTickets)
+
+    totalTickets = dbTickets.length;
+    populateTable(dbTickets, currentPage, ticketTable);
   } catch (error) {
     
   }
@@ -1276,7 +1321,6 @@ const fetchTickets = async () => {
 
 const fetchUsers = async () => {
   try {
-    // const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
     const targetUrl = '/get_all_users/';
 
     const response = await fetch(targetUrl, {
@@ -1299,16 +1343,24 @@ const fetchUsers = async () => {
 
     totalUsers = dbUsers.length;
     totalPages = Math.ceil(totalUsers / itemsPerPage);
-    populateAccountTable(dbUsers, currentPage);
+    populateTable(dbUsers, currentPage, accTable);
     updatePaginationInfo();
   } catch (error) {
     console.error('Error fetching users:', error);
   }
 };
 
-// Call the fetchUsers function
-fetchUsers();
 
+// Functions for fetching data
+const getRecords = async () => {
+  fetchUsers()
+  .then(() => {
+    fetchTickets();
+  });
+}
+
+
+getRecords();
 
 
 // Get Total
