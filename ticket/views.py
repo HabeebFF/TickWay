@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Users, Ticket, Wallet, Transaction
-from .serializers import UserSerializer, TicketSerializer, WalletSerializer, GetUserSerializer
+from .serializers import UserSerializer, TicketSerializer, WalletSerializer, GetUserSerializer, TransactionSerializer
 from django.contrib.auth import authenticate
 from django.db import transaction
 from django.views.decorators.csrf import csrf_exempt
@@ -93,7 +93,10 @@ def signup(request):
         receiver_email = user.email
         password = 'jvbe whjo lnwe pwxu'
         subject = 'Verify Email'
-        message = f'Hi Pelumi, Verify your email at {verification_url}'
+        message = f'''Hi {user.username},
+        Verify your email at {verification_url}
+
+        Token: {token}'''
 
         msg = MIMEMultipart()
         msg['From'] = sender_email
@@ -329,6 +332,12 @@ def get_all_tickets(request):
 
     return Response({'user_tickets': serializer.data}, status=status.HTTP_200_OK)
 
+@api_view(['GET'])
+def get_all_transactions(request):
+    transactions = Transaction.objects.all()
+    serializer = TransactionSerializer(transactions, many=True)
+
+    return Response({'all_transactions': serializer.data}, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
@@ -399,43 +408,41 @@ def verify_payment(request):
     }
 
     response = requests.get(url, headers=headers)
+    # print(response.text)
 
     if response.status_code == 200:
         response_data = response.json()
-        print(response_data)
-        if response_data['status'] and response_data['data']['amount'] == int(amount):
+        print(response_data['status'])
+        print(response_data['data']['amount'])
+        if response_data['status'] and response_data['data']['amount'] == int(amount) * 100:
+            print('good')
             try:
-            # Retrieve the transaction record
-
+                # Retrieve the transaction record
                 transaction = Transaction.objects.get(reference=reference)
 
-
-                transaction = Transaction.objects.get(reference=reference)
-
-            # Update the transaction status to successful
+                # Update the transaction status to successful
                 transaction.transaction_status = 'success'
                 transaction.save()
 
-            # Update the user's wallet balance
+                # Update the user's wallet balance
                 user = transaction.user_id
                 wallet = Wallet.objects.select_for_update().get(user_id=user)
-                wallet.wallet_balance += amount
+                wallet.wallet_balance += int(amount)
                 wallet.save()
                 print("Wallet updated successfully")
             except Transaction.DoesNotExist:
-                print("Transaction not found")
-            except Users.DoesNotExist:
-                print("User not found")
+                return Response({'error': 'Transaction not found'}, status=status.HTTP_404_NOT_FOUND)
             except Wallet.DoesNotExist:
-                print("Wallet not found")
+                return Response({'error': 'Wallet not found'}, status=status.HTTP_404_NOT_FOUND)
             except Exception as e:
                 print("Error updating wallet:", e)
+                return Response({'error': 'Error updating wallet'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
             return Response({'message': 'Payment verified successfully.'}, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Payment verification failed.'}, status=status.HTTP_400_BAD_REQUEST)
     else:
         return Response({'error': 'Failed to verify payment.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 
 
@@ -526,7 +533,6 @@ def top_up_wallet(request):
         return Response({"authorization_url": authorization_url, "access_code": access_code, "reference": reference, "amount": amount}, status=status.HTTP_200_OK)
     else:
         return Response(response_data, status=response.status_code)
-
 
 
 @api_view(['POST'])
