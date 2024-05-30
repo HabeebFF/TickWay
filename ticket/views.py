@@ -205,7 +205,7 @@ def history(request):
 
 @api_view(['GET'])
 def get_all_tickets(request):
-    tickets = Ticket.object.all()
+    tickets = Ticket.objects.all()
     serializer = TicketSerializer(tickets, many=True)
     
     return Response({'user_tickets': serializer.data}, status=status.HTTP_200_OK)
