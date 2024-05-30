@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Users, Ticket, Wallet
+from .models import Users, Ticket, Wallet, Transaction
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -16,6 +16,11 @@ class TicketSerializer(serializers.ModelSerializer):
 class WalletSerializer(serializers.ModelSerializer):
     class Meta:
         model = Wallet
+        fields = '__all__'
+
+class TransactionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transaction
         fields = '__all__'
 
 class GetUserSerializer(serializers.ModelSerializer):
