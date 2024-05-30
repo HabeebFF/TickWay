@@ -21,6 +21,7 @@ from ticket.views import *
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("user/", include('django.contrib.auth.urls')),
+    path("", landing, name='landing'),
     path('signup/', signup, name='signup'),
     path('login/', login, name='login'),
     path('history/', history, name='history'),

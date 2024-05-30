@@ -32,6 +32,10 @@ def generate_random_string(length=10):
 # random_string = generate_random_string()
 
 
+def landing(request):
+    return render(request, 'landing.html')
+
+
 def index(request):
     return render(request, 'index.html')
 

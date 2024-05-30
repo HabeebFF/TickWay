@@ -2,19 +2,55 @@
 <html>
   <head>
     <title>Verify Email</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f2f2f2;
+        /* padding: 20px; */
+        height: 100dvh;
+      }
+
+      .container {
+        height: 100%;
+        background-color: #4CAF50;
+        display: flex;
+        padding: 5rem 0;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        box-sizing: border-box;
+      }
+
+
+    </style>
   </head>
   <body>
-    <h1>Verify Your Email</h1>
-    <p>
-      Please enter your email and the 6-digit token that was sent to your email:
-    </p>
-    <form method="post" action="{% url 'verify_email' %}">
-      {% csrf_token %}
-      <label for="token">Email:</label><br />
-      <input type="email" id="email" name="email" required /><br />
-      <label for="token">Token:</label><br />
-      <input type="text" id="token" name="token" required /><br />
-      <input type="submit" value="Verify" />
-    </form>
+    <div class="container">
+      <div class="top-contain">
+        <h1>Verify Your Email</h1>
+        <p>
+          Please enter your email and the 6-digit token that was sent to your email:
+        </p>
+      </div>
+      <div class="form-sect">
+        <form method="post" action="/verify_email/">
+          <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+          <label for="token">Email:</label><br />
+          <input type="email" id="email" name="email" required /><br />
+          <label for="token">Token:</label><br />
+          <input type="text" id="token" name="token" required /><br />
+          <input type="submit" value="Verify" />
+        </form>
+      </div>
+      <footer>
+        <p>&copy; Radar 2024. All rights reserved.</p>
+      </footer>
+
+    </div>
   </body>
 </html>
