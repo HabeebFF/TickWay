@@ -93,7 +93,8 @@ def signup(request):
         receiver_email = user.email
         password = 'jvbe whjo lnwe pwxu'
         subject = 'Verify Email'
-        message = f'''Hi {user.username},
+        message = f'''
+        Hi {user.username},
         Verify your email at {verification_url}
 
         Token: {token}'''

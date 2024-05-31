@@ -39,12 +39,13 @@
       </div>
       <div class="form-sect">
         <form method="post" action="/verify_email/">
-          <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+          <input type="hidden" name="csrfmiddlewaretoken" hidden value="{{ csrf_token }}">
           <label for="token">Email:</label><br />
           <input type="email" id="email" name="email" required /><br />
           <label for="token">Token:</label><br />
           <input type="text" id="token" name="token" required /><br />
-          <input type="submit" value="Verify" />
+          <button type="submit">Verify</button>
+
         </form>
       </div>
       <footer>
