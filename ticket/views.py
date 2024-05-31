@@ -20,6 +20,11 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
+
+from django.http import FileResponse
+import os
+from django.conf import settings
+
 paystack_secret_key = 'sk_test_c70a285be29337a0697e19864e3665adb79cfc37'
 paystack.api_key = paystack_secret_key
 
@@ -45,6 +50,11 @@ def index(request):
 
     except Users.DoesNotExist:
         return redirect('/')
+
+
+def download_apk(request):
+    file_path = os.path.join(settings.MEDIA_ROOT, 'download/radar.apk')
+    return FileResponse(open(file_path, 'rb'), as_attachment=True, filename='radar.apk')
 
 # @api_view(['POST'])
 # def signup(request):
