@@ -12,20 +12,67 @@
         font-family: Arial, sans-serif;
         background-color: #f2f2f2;
         /* padding: 20px; */
-        height: 100dvh;
+        height: 100vh;
       }
 
       .container {
-        height: 100%;
-        background-color: #4CAF50;
-        display: flex;
-        padding: 5rem 0;
-        flex-direction: column;
-        align-items: center;
-        justify-content: space-between;
-        box-sizing: border-box;
-      }
+    height: 100%;
+    background-color: #4CAF50;
+    display: flex;
+    padding: 5rem 0;
+    text-align: center;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    box-sizing: border-box;
+}
 
+.form-sect {
+    width: 77%;
+    display: flex;
+    justify-content: center;
+    /* max-width: 515px; */
+}
+
+form {
+    background-color: #045d04;
+    padding: 2rem;
+    border-radius: 10px;
+    color: white;
+}
+
+form * {
+    box-sizing: border-box;
+    width: 100%;
+    margin-bottom: 1.2rem;
+}
+
+input {
+    padding: .6rem;
+    font-size: 1.8rem;
+    border: none;
+    border-radius: 7px;
+    margin-top: 5px;
+    color: white;
+    background-color: #008000ad;
+}
+
+button {
+    width: fit-content;
+    padding: 10px 20px;
+    border-radius: 10px;
+    background-color: transparent;
+    color: white;
+    border: 2px solid;
+}
+
+@media (max-width: 500px) {
+  * {
+    margin: 0;
+    padding: 0;
+    font-size: 1.8rem;
+}
+}
 
     </style>
   </head>

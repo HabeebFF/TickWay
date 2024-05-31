@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.conf import settings
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -37,7 +37,14 @@ def landing(request):
 
 
 def index(request):
-    return render(request, 'index.html')
+    try:
+        user = Users.objects.get(username=request.user.username)
+
+        if user:
+            return render(request, 'index.html');
+
+    except Users.DoesNotExist:
+        return redirect('/')
 
 # @api_view(['POST'])
 # def signup(request):
